@@ -1,4 +1,4 @@
-import Hotel from "../models/hotelModel.js";
+import hotelModel from "../models/hotelModel.js";
 
 // Create a hotel
 const createHotel = async (req, res) => {
@@ -33,6 +33,23 @@ const getHotels = async (req, res) => {
     const hotels = await Hotel.find(query);
 
     res.status(200).json({ success: true, count: hotels.length, data: hotels });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Server Error", error: error.message });
+  }
+};
+
+// Get hotel with its rooms
+export const getHotelWithRooms = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const hotel = await hotelModel.findById(id).populate("rooms");
+
+    if (!hotel) {
+      return res.status(404).json({ success: false, message: "Hotel not found" });
+    }
+
+    res.status(200).json({ success: true, data: hotel });
   } catch (error) {
     res.status(500).json({ success: false, message: "Server Error", error: error.message });
   }
