@@ -7,4 +7,6 @@ roomRoutes.post('/',createRoom)
 
 
 roomRoutes.get('/:hotelId',getRoomsByHotel)
+
+// roomRoutes.put('/:id',)
 export default roomRoutes;
