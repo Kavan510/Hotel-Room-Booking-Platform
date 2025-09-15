@@ -1,5 +1,6 @@
 import bookingModel from "../models/bookingModel.js";
 import roomModel from "../models/roomModel.js";
+import { isRoomBooked } from "../services/bookingService.js";
 
 // Book a room
 const bookRoom = async (req, res) => {
@@ -23,15 +24,7 @@ const bookRoom = async (req, res) => {
     const hotel = existingRoom.hotel;
     const price = existingRoom.price;
     // Check for overlapping bookings
-    const overlappingBooking = await bookingModel.findOne({
-      room,
-      $or: [
-        {
-          checkInDate: { $lt: new Date(checkOut) },
-          checkOutDate: { $gt: new Date(checkIn) },
-        },
-      ],
-    });
+    const overlappingBooking = await isRoomBooked(room,checkIn,checkOut)
 
     if (overlappingBooking) {
       return res.status(400).json({

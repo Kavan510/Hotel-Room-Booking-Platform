@@ -2,7 +2,7 @@ import { Router } from "express";
 import {
   createHotel,
   getHotels,
-  getHotelWithRooms,
+  searchHotelController,
 } from "../controllers/hotelController.js";
 getHotels;
 const hotelRoutes = Router();
@@ -11,6 +11,7 @@ hotelRoutes.post("/", createHotel);
 
 hotelRoutes.get("/", getHotels);
 
+hotelRoutes.get('/search',searchHotelController)
 // hotelRoutes.get("/:id", getHotelWithRooms);
 
 export default hotelRoutes;

@@ -1,6 +1,7 @@
 import dotenv from "dotenv";
 import app from "./app.js";
 import connectDB from "./config/db.js";
+import { loadHotelsInMemory } from "./services/searchServices.js";
 
 dotenv.config();
 
@@ -12,3 +13,5 @@ connectDB().then(() => {
     console.log(`Server running on port ${PORT}`);
   });
 });
+
+await loadHotelsInMemory();

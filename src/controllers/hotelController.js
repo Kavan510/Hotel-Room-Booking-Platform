@@ -1,4 +1,5 @@
 import hotelModel from "../models/hotelModel.js";
+import { searchHotels } from "../services/searchServices.js";
 
 // Create a hotel
 const createHotel = async (req, res) => {
@@ -30,7 +31,7 @@ const getHotels = async (req, res) => {
     if (city) query.city = new RegExp(city, "i");  // case-insensitive
     if (name) query.name = new RegExp(name, "i");
 
-    const hotels = await Hotel.find(query);
+    const hotels = await hotelModel.find(query);
 
     res.status(200).json({ success: true, count: hotels.length, data: hotels });
   } catch (error) {
@@ -56,4 +57,29 @@ export const getHotelWithRooms = async (req, res) => {
 };
 
 
-export {createHotel,getHotels};
+
+const searchHotelController = (req, res) => {
+  try {
+    const { city, name } = req.query;
+
+if (!city && !name) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid query. Use ?city=<city> or ?name=<hotel name>"
+      });
+    }
+
+    const results = searchHotels({ city, name });
+
+    res.status(200).json({
+      success: true,
+      count: results.length,
+      data: results,
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Server Error", error: error.message });
+  }
+};
+
+
+export {createHotel,getHotels,searchHotelController};
