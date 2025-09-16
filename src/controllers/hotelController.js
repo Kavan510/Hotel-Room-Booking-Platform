@@ -1,5 +1,8 @@
 import hotelModel from "../models/hotelModel.js";
-import {  searchHotels,loadHotelsInMemory } from "../services/searchServices.js";
+import {
+  searchHotels,
+  loadHotelsInMemory,
+} from "../services/searchServices.js";
 
 // Create a hotel
 const createHotel = async (req, res) => {
@@ -7,18 +10,22 @@ const createHotel = async (req, res) => {
     const { name, city } = req.body;
 
     if (!name || !city) {
-      return res.status(400).json({ success: false, message: "Name and city are required" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Name and city are required" });
     }
 
     const hotelData = {
-      name:name,
-      city:city
-    }
+      name: name,
+      city: city,
+    };
     const hotel = hotelModel.create(hotelData);
 
     res.status(201).json({ success: true, data: hotel });
   } catch (error) {
-    res.status(500).json({ success: false, message: "Server Error", error: error.message });
+    res
+      .status(500)
+      .json({ success: false, message: "Server Error", error: error.message });
   }
 };
 
@@ -28,14 +35,16 @@ const getHotels = async (req, res) => {
     const { city, name } = req.query;
 
     let query = {};
-    if (city) query.city = new RegExp(city, "i");  // case-insensitive
+    if (city) query.city = new RegExp(city, "i"); // case-insensitive
     if (name) query.name = new RegExp(name, "i");
 
     const hotels = await hotelModel.find(query);
 
     res.status(200).json({ success: true, count: hotels.length, data: hotels });
   } catch (error) {
-    res.status(500).json({ success: false, message: "Server Error", error: error.message });
+    res
+      .status(500)
+      .json({ success: false, message: "Server Error", error: error.message });
   }
 };
 
@@ -47,37 +56,46 @@ export const getHotelWithRooms = async (req, res) => {
     const hotel = await hotelModel.findById(id).populate("rooms");
 
     if (!hotel) {
-      return res.status(404).json({ success: false, message: "Hotel not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "Hotel not found" });
     }
 
     res.status(200).json({ success: true, data: hotel });
   } catch (error) {
-    res.status(500).json({ success: false, message: "Server Error", error: error.message });
+    res
+      .status(500)
+      .json({ success: false, message: "Server Error", error: error.message });
   }
 };
 
+
 const searchHotelController = async (req, res) => {
   try {
-    const limit=100;
-    const {name,city,page} = req.query;
-console.log(city);
+    const { name, city, page = 1, limit = 100 } = req.query;
 
-    if (!city || !name) {
-      return res.status(400).json({ success: false, message: "Invalid query. Use ?city=<city> or ?name=<hotel>" });
+    if (!city && !name) {
+      return res.status(400).json({
+        success: false,
+        message: "Please provide ?city=<city> or ?name=<hotel> (or both)",
+      });
     }
 
-    const results = searchHotels({ city, name, limit: Number(limit), page: Number(page) });
+    const { results, total, totalPages } = await searchHotels({ city, name, limit, page });
 
     return res.status(200).json({
       success: true,
       count: results.length,
       page: Number(page),
       limit: Number(limit),
+      total,
+      totalPages,
       data: results,
     });
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message });
   }
+
   //   try {
   //   const { city, name } = req.query;
   //   const query = {};
@@ -97,4 +115,4 @@ console.log(city);
   // }
 };
 
-export {createHotel,getHotels,searchHotelController};
+export { createHotel, getHotels, searchHotelController };

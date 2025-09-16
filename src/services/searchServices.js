@@ -1,3 +1,24 @@
+// Simple in-memory cache for search results
+const searchCache = new Map();
+const CACHE_TTL_MS = 60 * 1000; // 1 minute
+
+function makeCacheKey({ city, name, page, limit }) {
+  return JSON.stringify({ city, name, page, limit });
+}
+
+function setCache(key, value) {
+  searchCache.set(key, { value, expires: Date.now() + CACHE_TTL_MS });
+}
+
+function getCache(key) {
+  const entry = searchCache.get(key);
+  if (!entry) return null;
+  if (Date.now() > entry.expires) {
+    searchCache.delete(key);
+    return null;
+  }
+  return entry.value;
+}
 import hotelModel from "../models/hotelModel.js";
 
 let hotels = [];
@@ -111,28 +132,43 @@ const loadHotelsInMemory = async () => {
 
 //   return results;
 // };
-const searchHotels = async (req, res) => {
-  try {
-    const { city, name, limit = 100, page = 1 } = req.query;
 
-    if (!city && !name) {
-      return res.status(400).json({ success: false, message: "Invalid query. Use ?city=<city> or ?name=<hotel>" });
-    }
 
-    const results = searchHotels({ city, name, limit: Number(limit), page: Number(page) });
+/**
+ * Efficiently search hotels in MongoDB for large datasets (1M+ records) with pagination.
+ * Returns { results, total, page, limit, totalPages }
+ *
+ * @param {Object} params - Search params: city, name, limit, page
+ * @returns {Object} { results, total, page, limit, totalPages }
+ */
+const searchHotels = async ({ city, name, limit = 100, page = 1 }) => {
+  const cacheKey = makeCacheKey({ city, name, page, limit });
+  const cached = getCache(cacheKey);
+  if (cached) return cached;
 
-    return res.status(200).json({
-      success: true,
-      count: results.length,
-      page: Number(page),
-      limit: Number(limit),
-      data: results,
-    });
-  } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
-  }
+  const query = {};
+  if (city) query.city = new RegExp(city, "i");   // case-insensitive search
+  if (name) query.name = new RegExp(name, "i");
+
+  // Ensure page and limit are positive integers
+  const safeLimit = Math.max(1, Math.min(parseInt(limit, 10) || 100, 1000));
+  const safePage = Math.max(1, parseInt(page, 10) || 1);
+  const skip = (safePage - 1) * safeLimit;
+
+  // Get total count for pagination
+  const total = await hotelModel.countDocuments(query);
+  const results = await hotelModel.find(query).skip(skip).limit(safeLimit).lean();
+
+  const response = {
+    results,
+    total,
+    page: safePage,
+    limit: safeLimit,
+    totalPages: Math.ceil(total / safeLimit)
+  };
+  setCache(cacheKey, response);
+  return response;
 };
-
 
 
 export { loadHotelsInMemory, searchHotels };
