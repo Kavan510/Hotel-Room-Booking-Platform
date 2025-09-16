@@ -1,3 +1,6 @@
+# Hotel Room Booking Platform
+
+## Problem Statement
 
 The goal of this project is to implement a **Hotel Room Booking Platform** where:
 
@@ -10,6 +13,7 @@ The goal of this project is to implement a **Hotel Room Booking Platform** where
 
 ---
 
+## Approach
 We designed this project with **modularity and scalability** in mind:
 
 - **Models**: `Hotel`, `Room`, `Booking` (using Mongoose).
@@ -23,6 +27,9 @@ We designed this project with **modularity and scalability** in mind:
 
 ---
 
+## Prerequisites
+
+- [Node.js](https://nodejs.org/)
 - [express.js](https://expressjs.com/)
 - [MongoDB](https://www.mongodb.com/) 
 - npm as a package manager
@@ -128,7 +135,6 @@ newcheckIn<existCheckOut && newCheckOut>existIn
 
 ```js
 const hotels = await hotelModel.find(query)
-const hotels = await Hotel.find(query)
   .skip((page - 1) * limit)
   .limit(Number(limit));
 ```
@@ -137,7 +143,6 @@ const hotels = await Hotel.find(query)
 
 ```bash
 GET /api/hotels?city=Goa&page=2
-GET /api/hotels?city=Goa&page=2&limit=5
 ```
 
 ## Special Considerations
