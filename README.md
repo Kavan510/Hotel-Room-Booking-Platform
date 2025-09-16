@@ -1,6 +1,6 @@
-# 🏨 Hotel Room Booking Platform
+# Hotel Room Booking Platform
 
-## 📌 Problem Statement
+## Problem Statement
 The goal of this project is to implement a **Hotel Room Booking Platform** where:
 - Hotels can have multiple rooms of different types (Single, Double, Suite).
 - Users can **book rooms** for a given date range.
@@ -11,7 +11,7 @@ The goal of this project is to implement a **Hotel Room Booking Platform** where
 
 ---
 
-## 🚀 Approach
+## Approach
 We designed this project with **modularity and scalability** in mind:
 - **Models**: `Hotel`, `Room`, `Booking` (using Mongoose).
 - **Services**:  
@@ -24,7 +24,7 @@ We designed this project with **modularity and scalability** in mind:
 
 ---
 
-## ⚙️ Prerequisites
+## Prerequisites
 - [Node.js](https://nodejs.org/) 
 - [express.js](https://expressjs.com/)
 - [MongoDB](https://www.mongodb.com/) (local or cloud instance via Atlas)
@@ -32,7 +32,7 @@ We designed this project with **modularity and scalability** in mind:
 
 ---
 
-## 📥 Setup Instructions
+## Setup Instructions
 
 1. **Clone Repository**
    ```bash
@@ -71,13 +71,13 @@ newcheckIn<existCheckOut && newCheckOut>existIn
 
 **Logic**
 ```js
-const hotels = await Hotel.find(query)
+const hotels = await hotelModel.find(query)
   .skip((page - 1) * limit)
   .limit(Number(limit));
 ```
 **Example:**
 ```bash
-GET /api/hotels?city=Goa&page=2&limit=5
+GET /api/hotels?city=Goa&page=2
 ```
 
 ## Special Considerations
