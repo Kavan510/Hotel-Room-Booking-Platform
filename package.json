@@ -7,8 +7,7 @@
     "start":"node src/server.js",
     "dev": "nodemon src/server.js",
     "seed:hotels": "node src/mock_data/generateMockData.js",
-    "seed:rooms": "node src/mock_data/generateRoomData.js",
-    "test": "cross-env NODE_OPTIONS=--experimental-vm-modules jest --runInBand"
+    "seed:rooms": "node src/mock_data/generateRoomData.js"
   },
   "keywords": [],
   "author": "Kavan Kansodariya",

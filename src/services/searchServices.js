@@ -1,24 +1,3 @@
-// Simple in-memory cache for search results
-// const searchCache = new Map();
-// const CACHE_TTL_MS = 60 * 1000; // 1 minute
-
-// function makeCacheKey({ city, name, page, limit }) {
-//   return JSON.stringify({ city, name, page, limit });
-// }
-
-// function setCache(key, value) {
-//   searchCache.set(key, { value, expires: Date.now() + CACHE_TTL_MS });
-// }
-
-// function getCache(key) {
-//   const entry = searchCache.get(key);
-//   if (!entry) return null;
-//   if (Date.now() > entry.expires) {
-//     searchCache.delete(key);
-//     return null;
-//   }
-//   return entry.value;
-// }
 import hotelModel from "../models/hotelModel.js";
 
 let hotels = [];
@@ -76,7 +55,6 @@ const loadHotelsInMemory = async () => {
   return loadingPromise;
 };
 
-// const isHotelsLoaded = () => hotels.length > 0;
 
 // =============================<< Below function Search hotels based on filter  >> ======================
 
