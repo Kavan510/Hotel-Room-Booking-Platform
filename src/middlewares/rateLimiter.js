@@ -1,5 +1,7 @@
 import rateLimit from "express-rate-limit";
 
+
+
 // Limit booking requests: max 5 per minute per IP
 export const bookingRateLimiter = rateLimit({
   windowMs: 60 * 1000, // 1 minute

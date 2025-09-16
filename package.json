@@ -4,6 +4,7 @@
   "main": "server.js",
   "type": "module",
   "scripts": {
+    "start":"node src/server.js",
     "dev": "nodemon src/server.js",
     "seed:hotels": "node src/mock_data/generateMockData.js",
     "seed:rooms": "node src/mock_data/generateRoomData.js",

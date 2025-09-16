@@ -1,5 +1,5 @@
 const cache = new Map();
-const CACHE_TTL = 60 * 1000; // 1 minute
+const CACHE_TTL = 60 * 2000; // 2 minute
 
 const cacheMiddleware = (req, res, next) => {
   const key = req.originalUrl; // unique key: /api/hotels/search?city=Goa

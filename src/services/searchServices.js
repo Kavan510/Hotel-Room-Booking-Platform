@@ -22,10 +22,10 @@
 import hotelModel from "../models/hotelModel.js";
 
 let hotels = [];
-let cityIndex = new Map();   // city -> [hotel,...]
-let nameIndex = new Map();   // name -> [hotel,...]
-let cityKeys = [];           // cached list of city keys
-let nameKeys = [];           // cached list of name keys
+let cityIndex = new Map(); // city -> [hotel,...]
+let nameIndex = new Map(); // name -> [hotel,...]
+let cityKeys = []; // cached list of city keys
+let nameKeys = []; // cached list of name keys
 
 // Prevent concurrent loads
 let loadingPromise = null;
@@ -43,7 +43,7 @@ const loadHotelsInMemory = async () => {
   console.time("loadHotels");
   loadingPromise = (async () => {
     try {
-      // Only fetch required fields 
+      // Only fetch required fields
       hotels = await hotelModel.find({}, { name: 1, city: 1 }).lean();
       hotels = hotels || [];
 
@@ -78,6 +78,7 @@ const loadHotelsInMemory = async () => {
 
 // const isHotelsLoaded = () => hotels.length > 0;
 
+// =============================<< Below function Search hotels based on filter  >> ======================
 
 /**
  * @param {Object} params - Search params: city, name, limit, page
@@ -89,28 +90,34 @@ const searchHotels = async ({ city, name, limit = 100, page = 1 }) => {
   // if (cached) return cached;
 
   const query = {};
-  if (city) query.city = new RegExp(city, "i");   // case-insensitive search
+  if (city) query.city = new RegExp(city, "i"); // case-insensitive search
   if (name) query.name = new RegExp(name, "i");
 
   // Ensure page and limit are positive integers
   const safeLimit = Math.max(1, Math.min(parseInt(limit, 10) || 100, 1000));
   const safePage = Math.max(1, parseInt(page, 10) || 1);
+
+  // skip the pages before current page
+
   const skip = (safePage - 1) * safeLimit;
 
   // Get total count for pagination
   const total = await hotelModel.countDocuments(query);
-  const results = await hotelModel.find(query).skip(skip).limit(safeLimit).lean();
+  const results = await hotelModel
+    .find(query)
+    .skip(skip)
+    .limit(safeLimit)
+    .lean();
 
   const response = {
     results,
     total,
     page: safePage,
     limit: safeLimit,
-    totalPages: Math.ceil(total / safeLimit)
+    totalPages: Math.ceil(total / safeLimit),
   };
   // setCache(cacheKey, response);
   return response;
 };
-
 
 export { loadHotelsInMemory, searchHotels };

@@ -1,7 +1,7 @@
 import roomModel from "../models/roomModel.js";
 import hotelModel from "../models/hotelModel.js";
 
-// Create a room
+// Create a room 
  const createRoom = async (req, res) => {
   try {
     const { hotel, roomType, price, available } = req.body;
@@ -27,7 +27,7 @@ import hotelModel from "../models/hotelModel.js";
   }
 };
 
-// Get all rooms for a given hotel
+// Get all rooms for a given hotel 
 const getRoomsByHotel = async (req, res) => {
   try {
     const { hotelId } = req.params;

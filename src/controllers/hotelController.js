@@ -4,7 +4,8 @@ import {
   loadHotelsInMemory,
 } from "../services/searchServices.js";
 
-// Create a hotel
+// =============================<< Create a hotel >>=============================
+
 const createHotel = async (req, res) => {
   try {
     const { name, city } = req.body;
@@ -29,45 +30,48 @@ const createHotel = async (req, res) => {
   }
 };
 
-// Get hotels (with optional filters)
-const getHotels = async (req, res) => {
-  try {
-    const { city, name } = req.query;
 
-    let query = {};
-    if (city) query.city = new RegExp(city, "i"); // case-insensitive
-    if (name) query.name = new RegExp(name, "i");
+// =============================<< Commented code is not important for now >> =========================
 
-    const hotels = await hotelModel.find(query);
+// // Get hotels (with optional filters)
+// const getHotels = async (req, res) => {
+//   try {
+//     const { city, name } = req.query;
 
-    res.status(200).json({ success: true, count: hotels.length, data: hotels });
-  } catch (error) {
-    res
-      .status(500)
-      .json({ success: false, message: "Server Error", error: error.message });
-  }
-};
+//     let query = {};
+//     if (city) query.city = new RegExp(city, "i"); // case-insensitive
+//     if (name) query.name = new RegExp(name, "i");
 
-// Get hotel with its rooms
-export const getHotelWithRooms = async (req, res) => {
-  try {
-    const { id } = req.params;
+//     const hotels = await hotelModel.find(query);
 
-    const hotel = await hotelModel.findById(id).populate("rooms");
+//     res.status(200).json({ success: true, count: hotels.length, data: hotels });
+//   } catch (error) {
+//     res
+//       .status(500)
+//       .json({ success: false, message: "Server Error", error: error.message });
+//   }
+// };
 
-    if (!hotel) {
-      return res
-        .status(404)
-        .json({ success: false, message: "Hotel not found" });
-    }
+// // Get hotel with its rooms
+// export const getHotelWithRooms = async (req, res) => {
+//   try {
+//     const { id } = req.params;
 
-    res.status(200).json({ success: true, data: hotel });
-  } catch (error) {
-    res
-      .status(500)
-      .json({ success: false, message: "Server Error", error: error.message });
-  }
-};
+//     const hotel = await hotelModel.findById(id).populate("rooms");
+
+//     if (!hotel) {
+//       return res
+//         .status(404)
+//         .json({ success: false, message: "Hotel not found" });
+//     }
+
+//     res.status(200).json({ success: true, data: hotel });
+//   } catch (error) {
+//     res
+//       .status(500)
+//       .json({ success: false, message: "Server Error", error: error.message });
+//   }
+// };
 
 
 const searchHotelController = async (req, res) => {
@@ -96,6 +100,9 @@ const searchHotelController = async (req, res) => {
     return res.status(500).json({ success: false, message: error.message });
   }
 
+
+// ===========<< Below code is kind of simple implimentation with limit >> =========
+
   //   try {
   //   const { city, name } = req.query;
   //   const query = {};
@@ -115,4 +122,4 @@ const searchHotelController = async (req, res) => {
   // }
 };
 
-export { createHotel, getHotels, searchHotelController };
+export { createHotel, searchHotelController };
