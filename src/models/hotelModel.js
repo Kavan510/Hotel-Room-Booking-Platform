@@ -1,19 +1,22 @@
 import mongoose from "mongoose";
-import roomModel from "./roomModel.js";
+
 const hotelSchema = new mongoose.Schema(
   {
     name: {
       type: String,
       required: [true, "Hotel name is required"],
+      index: true, // create index on hotel name
     },
     city: {
       type: String,
       required: [true, "City is required"],
+      index: true, // create index on city
     },
   },
   { timestamps: true }
 );
 
+// Optional: relation with rooms
 // hotelSchema.virtual("rooms", {
 //   ref: "Room",
 //   localField: "_id",

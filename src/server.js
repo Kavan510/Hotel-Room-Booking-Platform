@@ -13,5 +13,6 @@ connectDB().then(() => {
     console.log(`Server running on port ${PORT}`);
   });
 });
-
-await loadHotelsInMemory();
+loadHotelsInMemory().catch(err => {
+  console.error("Failed to preload hotels:", err);
+});
