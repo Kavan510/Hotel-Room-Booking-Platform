@@ -1,54 +1,54 @@
+import mongoose from "mongoose";
 import bookingModel from "../models/bookingModel.js";
 import roomModel from "../models/roomModel.js";
 import { isRoomBooked } from "../services/bookingService.js";
 
-// Book a room
 const bookRoom = async (req, res) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
   try {
-    const {room} = req.params;
+    const { room } = req.params;
     const { checkIn, checkOut } = req.body;
 
-    if ( !checkIn || !checkOut) {
-      return res
-        .status(400)
-        .json({ success: false, message: "All fields are required" });
+    if (!checkIn || !checkOut) {
+      return res.status(400).json({ success: false, message: "All fields are required" });
     }
 
     // Ensure room exists
-    const existingRoom = await roomModel.findById(room);
+    const existingRoom = await roomModel.findById(room).session(session);
     if (!existingRoom) {
-      return res
-        .status(404)
-        .json({ success: false, message: "Room not found" });
+      await session.abortTransaction();
+      return res.status(404).json({ success: false, message: "Room not found" });
     }
-    const hotel = existingRoom.hotel;
-    const price = existingRoom.price;
-    // Check for overlapping bookings
-    const overlappingBooking = await isRoomBooked(room,checkIn,checkOut)
 
-    if (overlappingBooking) {
-      return res.status(400).json({
-        success: false,
-        message: "Room already booked for given dates",
-      });
+    // Check overlapping booking INSIDE the transaction
+    const overlapping = await isRoomBooked(room, checkIn, checkOut, session);
+    if (overlapping) {
+      await session.abortTransaction();
+      return res.status(400).json({ success: false, message: "Room already booked for these dates" });
     }
 
     // Create booking
-    const bookingData = {
+    const booking = new bookingModel({
       room: room,
-      hotel: hotel,
+      hotel: existingRoom.hotel,
       checkInDate: new Date(checkIn),
       checkOutDate: new Date(checkOut),
-      totalPrice: price,
-      status: "booked",
-    };
-    const booking = await bookingModel.create(bookingData);
+      totalPrice: existingRoom.price,
+      status: "booked"
+    });
+
+    await booking.save({ session });
+
+    await session.commitTransaction();
+    session.endSession();
 
     res.status(201).json({ success: true, data: booking });
   } catch (error) {
-    res
-      .status(500)
-      .json({ success: false, message: "Server Error", error: error.message });
+    await session.abortTransaction();
+    session.endSession();
+    res.status(500).json({ success: false, message: "Server Error", error: error.message });
   }
 };
 

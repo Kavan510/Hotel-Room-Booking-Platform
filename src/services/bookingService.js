@@ -1,5 +1,3 @@
-
-
 import bookingModel from "../models/bookingModel.js";
 
 /**
@@ -7,15 +5,16 @@ import bookingModel from "../models/bookingModel.js";
  * @param {String} roomId - Room ID
  * @param {Date} checkIn - Check-in date
  * @param {Date} checkOut - Check-out date
+ * @param {Object} session - Mongoose session (optional, for transactions)
  * @returns {Boolean} - true if overlapping booking exists
  */
-export const isRoomBooked = async (roomId, checkIn, checkOut) => {
+export const isRoomBooked = async (roomId, checkIn, checkOut, session = null) => {
   const overlappingBooking = await bookingModel.findOne({
     room: roomId,
-    $or: [
-      { checkInDate: { $lt: new Date(checkOut) }, checkOutDate: { $gt: new Date(checkIn) } }
-    ],
-  });
+    status: "booked", // only consider active bookings
+    checkInDate: { $lt: new Date(checkOut) },
+    checkOutDate: { $gt: new Date(checkIn) }
+  }).session(session);
 
-  return !!overlappingBooking; // returns true if found
+  return !!overlappingBooking;
 };

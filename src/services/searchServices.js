@@ -3,8 +3,8 @@ import hotelModel from "../models/hotelModel.js";
 let hotels = [];
 let cityIndex = new Map();   // cityLower -> [hotel,...]
 let nameIndex = new Map();   // nameLower -> [hotel,...]
-let cityKeys = [];           // cached list of city keys for partial matching
-let nameKeys = [];           // cached list of name keys for partial matching
+let cityKeys = [];           // cached list of city keys
+let nameKeys = [];           // cached list of name keys
 
 // Prevent concurrent loads
 let loadingPromise = null;
@@ -13,115 +13,126 @@ const normalize = (s) => (s ? s.toString().trim().toLowerCase() : "");
 
 /**
  * Load hotels into memory and build simple indexes.
- * Safe to call concurrently: subsequent callers will await the same promise.
+ * Call this once at app startup to avoid repeated slow loads.
  */
 const loadHotelsInMemory = async () => {
-  if (hotels.length > 0) return;        // already loaded
+  if (hotels.length > 0) return;
   if (loadingPromise) return loadingPromise;
 
   console.time("loadHotels");
   loadingPromise = (async () => {
-hotels = await hotelModel.find().lean();
-console.timeEnd("loadHotels");
-console.log(`Loaded ${hotels.length} hotels into memory`);
+    try {
+      // Only fetch required fields (much faster than pulling entire docs)
+      hotels = await hotelModel.find({}, { name: 1, city: 1 }).lean();
+      hotels = hotels || [];
 
-    hotels = hotels || [];
+      cityIndex = new Map();
+      nameIndex = new Map();
 
-    cityIndex = new Map();
-    nameIndex = new Map();
+      for (const h of hotels) {
+        const ck = normalize(h.city);
+        const nk = normalize(h.name);
 
-    for (const h of hotels) {
-      const ck = normalize(h.city);
-      const nk = normalize(h.name);
+        if (!cityIndex.has(ck)) cityIndex.set(ck, []);
+        cityIndex.get(ck).push(h);
 
-      if (!cityIndex.has(ck)) cityIndex.set(ck, []);
-      cityIndex.get(ck).push(h);
+        if (!nameIndex.has(nk)) nameIndex.set(nk, []);
+        nameIndex.get(nk).push(h);
+      }
 
-      if (!nameIndex.has(nk)) nameIndex.set(nk, []);
-      nameIndex.get(nk).push(h);
+      cityKeys = Array.from(cityIndex.keys());
+      nameKeys = Array.from(nameIndex.keys());
+
+      console.log(
+        `Loaded ${hotels.length} hotels into memory (${cityIndex.size} unique cities).`
+      );
+    } finally {
+      console.timeEnd("loadHotels");
+      loadingPromise = null;
     }
-
-    cityKeys = Array.from(cityIndex.keys());
-    nameKeys = Array.from(nameIndex.keys());
-
-    console.log(`Loaded ${hotels.length} hotels into memory (${cityIndex.size} unique cities).`);
-    loadingPromise = null;
   })();
 
   return loadingPromise;
 };
 
- const isHotelsLoaded = () => hotels.length > 0;
+// const isHotelsLoaded = () => hotels.length > 0;
 
-const searchHotels = ({ city, name, limit = 100 }) => {
-  const qCity = normalize(city) || null;
-  const qName = normalize(name) || null;
+// const searchHotels = ({ city, name, limit = 100 }) => {
+//   if (!isHotelsLoaded()) {
+//     loadHotelsInMemory();
+//     // throw new Error("Hotels not loaded. Call loadHotelsInMemory() first.");
+//   }
 
-  if (!qCity && !qName) return [];
+//   const qCity = normalize(city) || null;
+//   const qName = normalize(name) || null;
+//   if (!qCity && !qName) return [];
 
-  // Helper to produce array of hotels for a city (exact or partial)
-  const hotelsByCityQuery = (q) => {
-    if (!q) return null;
-    let matched = cityIndex.get(q);
-    if (matched && matched.length) return matched;
-    // partial match on city keys (few keys so this is cheap)
-    const matchedKeys = cityKeys.filter(k => k.includes(q));
-    if (!matchedKeys.length) return [];
-    const acc = [];
-    for (const k of matchedKeys) {
-      acc.push(...(cityIndex.get(k) || []));
+//   const hotelsByCityQuery = (q) => {
+//     if (!q) return null;
+//     const exact = cityIndex.get(q);
+//     if (exact && exact.length) return exact;
+//     const matchedKeys = cityKeys.filter((k) => k.includes(q));
+//     return matchedKeys.flatMap((k) => cityIndex.get(k) || []);
+//   };
+
+//   const hotelsByNameQuery = (q) => {
+//     if (!q) return null;
+//     const exact = nameIndex.get(q);
+//     if (exact && exact.length) return exact;
+//     const matchedKeys = nameKeys.filter((k) => k.includes(q));
+//     return matchedKeys.flatMap((k) => nameIndex.get(k) || []);
+//   };
+
+//   let resultIds = null;
+
+//   if (qCity) {
+//     const cityMatches = hotelsByCityQuery(qCity) || [];
+//     resultIds = new Set(cityMatches.map((h) => h._id.toString()));
+//   }
+
+//   if (qName) {
+//     const nameMatches = hotelsByNameQuery(qName) || [];
+//     const nameSet = new Set(nameMatches.map((h) => h._id.toString()));
+//     resultIds =
+//       resultIds === null
+//         ? nameSet
+//         : new Set([...resultIds].filter((id) => nameSet.has(id)));
+//   }
+
+//   if (!resultIds || resultIds.size === 0) return [];
+
+//   const results = [];
+//   for (const h of hotels) {
+//     if (resultIds.has(h._id.toString())) {
+//       results.push(h);
+//       if (results.length >= limit) break;
+//     }
+//   }
+
+//   return results;
+// };
+const searchHotels = async (req, res) => {
+  try {
+    const { city, name, limit = 100, page = 1 } = req.query;
+
+    if (!city && !name) {
+      return res.status(400).json({ success: false, message: "Invalid query. Use ?city=<city> or ?name=<hotel>" });
     }
-    return acc;
-  };
 
-  // Helper for name (exact or partial)
-  const hotelsByNameQuery = (q) => {
-    if (!q) return null;
-    let matched = nameIndex.get(q);
-    if (matched && matched.length) return matched;
-    const matchedKeys = nameKeys.filter(k => k.includes(q));
-    if (!matchedKeys.length) return [];
-    const acc = [];
-    for (const k of matchedKeys) {
-      acc.push(...(nameIndex.get(k) || []));
-    }
-    return acc;
-  };
+    const results = searchHotels({ city, name, limit: Number(limit), page: Number(page) });
 
-  let resultIds = null; // Set of hotel._id strings
-
-  // Apply city filter
-  if (qCity) {
-    const cityMatches = hotelsByCityQuery(qCity) || [];
-    const set = new Set(cityMatches.map(h => h._id.toString()));
-    resultIds = set;
+    return res.status(200).json({
+      success: true,
+      count: results.length,
+      page: Number(page),
+      limit: Number(limit),
+      data: results,
+    });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
   }
-
-  // Apply name filter (intersect with city if both present)
-  if (qName) {
-    const nameMatches = hotelsByNameQuery(qName) || [];
-    const nameSet = new Set(nameMatches.map(h => h._id.toString()));
-
-    if (resultIds === null) {
-      resultIds = nameSet;
-    } else {
-      // intersection
-      resultIds = new Set([...resultIds].filter(id => nameSet.has(id)));
-    }
-  }
-
-  if (!resultIds || resultIds.size === 0) return [];
-
-  // Build final results preserving original hotel objects and apply limit
-  const results = [];
-  for (const h of hotels) {
-    if (resultIds.has(h._id.toString())) {
-      results.push(h);
-      if (results.length >= limit) break;
-    }
-  }
-
-  return results;
 };
 
-export {loadHotelsInMemory,isHotelsLoaded,searchHotels};
+
+
+export { loadHotelsInMemory, searchHotels };

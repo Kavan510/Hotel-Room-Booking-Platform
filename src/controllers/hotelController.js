@@ -1,5 +1,5 @@
 import hotelModel from "../models/hotelModel.js";
-import { isHotelsLoaded, searchHotels,loadHotelsInMemory } from "../services/searchServices.js";
+import {  searchHotels,loadHotelsInMemory } from "../services/searchServices.js";
 
 // Create a hotel
 const createHotel = async (req, res) => {
@@ -57,22 +57,35 @@ export const getHotelWithRooms = async (req, res) => {
 };
 
 const searchHotelController = async (req, res) => {
-  // try {
+  try {
+    const limit=100;
+    const {name,city,page} = req.query;
+console.log(city);
+
+    if (!city || !name) {
+      return res.status(400).json({ success: false, message: "Invalid query. Use ?city=<city> or ?name=<hotel>" });
+    }
+
+    const results = searchHotels({ city, name, limit: Number(limit), page: Number(page) });
+
+    return res.status(200).json({
+      success: true,
+      count: results.length,
+      page: Number(page),
+      limit: Number(limit),
+      data: results,
+    });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+  //   try {
   //   const { city, name } = req.query;
+  //   const query = {};
 
-  //   if (!city && !name) {
-  //     return res.status(400).json({
-  //       success: false,
-  //       message: "Invalid query. Use ?city=<city> or ?name=<hotel name>",
-  //     });
-  //   }
+  //   if (city) query.city = { $regex: `^${city}`, $options: "i" }; // prefix match
+  //   if (name) query.name = { $regex: `^${name}`, $options: "i" };
 
-  //   // Ensure index is loaded. If it's not loaded yet, load synchronously now.
-  //   if (!isHotelsLoaded()) {
-  //     await loadHotelsInMemory();
-  //   }
-
-  //   const results = searchHotels({ city, name, limit: 100 });
+  //   const results = await hotelModel.find(query).limit(100);
 
   //   return res.status(200).json({
   //     success: true,
@@ -80,30 +93,8 @@ const searchHotelController = async (req, res) => {
   //     data: results,
   //   });
   // } catch (error) {
-  //   console.error("Search error:", error);
-  //   return res.status(500).json({
-  //     success: false,
-  //     message: "Server Error",
-  //     error: error.message,
-  //   });
+  //   return res.status(500).json({ success: false, message: error.message });
   // }
-    try {
-    const { city, name } = req.query;
-    const query = {};
-
-    if (city) query.city = { $regex: `^${city}`, $options: "i" }; // prefix match
-    if (name) query.name = { $regex: `^${name}`, $options: "i" };
-
-    const results = await hotelModel.find(query).limit(200);
-
-    return res.status(200).json({
-      success: true,
-      count: results.length,
-      data: results,
-    });
-  } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
-  }
 };
 
 export {createHotel,getHotels,searchHotelController};

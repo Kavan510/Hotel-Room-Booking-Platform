@@ -4,7 +4,8 @@ import {
   getHotels,
   searchHotelController,
 } from "../controllers/hotelController.js";
-getHotels;
+
+
 const hotelRoutes = Router();
 
 hotelRoutes.post("/", createHotel);
