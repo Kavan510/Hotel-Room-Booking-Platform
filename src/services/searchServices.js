@@ -1,29 +1,29 @@
 // Simple in-memory cache for search results
-const searchCache = new Map();
-const CACHE_TTL_MS = 60 * 1000; // 1 minute
+// const searchCache = new Map();
+// const CACHE_TTL_MS = 60 * 1000; // 1 minute
 
-function makeCacheKey({ city, name, page, limit }) {
-  return JSON.stringify({ city, name, page, limit });
-}
+// function makeCacheKey({ city, name, page, limit }) {
+//   return JSON.stringify({ city, name, page, limit });
+// }
 
-function setCache(key, value) {
-  searchCache.set(key, { value, expires: Date.now() + CACHE_TTL_MS });
-}
+// function setCache(key, value) {
+//   searchCache.set(key, { value, expires: Date.now() + CACHE_TTL_MS });
+// }
 
-function getCache(key) {
-  const entry = searchCache.get(key);
-  if (!entry) return null;
-  if (Date.now() > entry.expires) {
-    searchCache.delete(key);
-    return null;
-  }
-  return entry.value;
-}
+// function getCache(key) {
+//   const entry = searchCache.get(key);
+//   if (!entry) return null;
+//   if (Date.now() > entry.expires) {
+//     searchCache.delete(key);
+//     return null;
+//   }
+//   return entry.value;
+// }
 import hotelModel from "../models/hotelModel.js";
 
 let hotels = [];
-let cityIndex = new Map();   // cityLower -> [hotel,...]
-let nameIndex = new Map();   // nameLower -> [hotel,...]
+let cityIndex = new Map();   // city -> [hotel,...]
+let nameIndex = new Map();   // name -> [hotel,...]
 let cityKeys = [];           // cached list of city keys
 let nameKeys = [];           // cached list of name keys
 
@@ -43,7 +43,7 @@ const loadHotelsInMemory = async () => {
   console.time("loadHotels");
   loadingPromise = (async () => {
     try {
-      // Only fetch required fields (much faster than pulling entire docs)
+      // Only fetch required fields 
       hotels = await hotelModel.find({}, { name: 1, city: 1 }).lean();
       hotels = hotels || [];
 
@@ -78,73 +78,15 @@ const loadHotelsInMemory = async () => {
 
 // const isHotelsLoaded = () => hotels.length > 0;
 
-// const searchHotels = ({ city, name, limit = 100 }) => {
-//   if (!isHotelsLoaded()) {
-//     loadHotelsInMemory();
-//     // throw new Error("Hotels not loaded. Call loadHotelsInMemory() first.");
-//   }
-
-//   const qCity = normalize(city) || null;
-//   const qName = normalize(name) || null;
-//   if (!qCity && !qName) return [];
-
-//   const hotelsByCityQuery = (q) => {
-//     if (!q) return null;
-//     const exact = cityIndex.get(q);
-//     if (exact && exact.length) return exact;
-//     const matchedKeys = cityKeys.filter((k) => k.includes(q));
-//     return matchedKeys.flatMap((k) => cityIndex.get(k) || []);
-//   };
-
-//   const hotelsByNameQuery = (q) => {
-//     if (!q) return null;
-//     const exact = nameIndex.get(q);
-//     if (exact && exact.length) return exact;
-//     const matchedKeys = nameKeys.filter((k) => k.includes(q));
-//     return matchedKeys.flatMap((k) => nameIndex.get(k) || []);
-//   };
-
-//   let resultIds = null;
-
-//   if (qCity) {
-//     const cityMatches = hotelsByCityQuery(qCity) || [];
-//     resultIds = new Set(cityMatches.map((h) => h._id.toString()));
-//   }
-
-//   if (qName) {
-//     const nameMatches = hotelsByNameQuery(qName) || [];
-//     const nameSet = new Set(nameMatches.map((h) => h._id.toString()));
-//     resultIds =
-//       resultIds === null
-//         ? nameSet
-//         : new Set([...resultIds].filter((id) => nameSet.has(id)));
-//   }
-
-//   if (!resultIds || resultIds.size === 0) return [];
-
-//   const results = [];
-//   for (const h of hotels) {
-//     if (resultIds.has(h._id.toString())) {
-//       results.push(h);
-//       if (results.length >= limit) break;
-//     }
-//   }
-
-//   return results;
-// };
-
 
 /**
- * Efficiently search hotels in MongoDB for large datasets (1M+ records) with pagination.
- * Returns { results, total, page, limit, totalPages }
- *
  * @param {Object} params - Search params: city, name, limit, page
  * @returns {Object} { results, total, page, limit, totalPages }
  */
 const searchHotels = async ({ city, name, limit = 100, page = 1 }) => {
-  const cacheKey = makeCacheKey({ city, name, page, limit });
-  const cached = getCache(cacheKey);
-  if (cached) return cached;
+  // const cacheKey = makeCacheKey({ city, name, page, limit });
+  // const cached = getCache(cacheKey);
+  // if (cached) return cached;
 
   const query = {};
   if (city) query.city = new RegExp(city, "i");   // case-insensitive search
@@ -166,7 +108,7 @@ const searchHotels = async ({ city, name, limit = 100, page = 1 }) => {
     limit: safeLimit,
     totalPages: Math.ceil(total / safeLimit)
   };
-  setCache(cacheKey, response);
+  // setCache(cacheKey, response);
   return response;
 };
 
